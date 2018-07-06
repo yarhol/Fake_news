@@ -9,6 +9,7 @@ import os
 from os import makedirs, chdir
 from os.path import join
 from textblob import TextBlob, Word
+import seaborn
 
 
 def bit_of_cleaning (source):
@@ -37,7 +38,7 @@ def bit_of_cleaning (source):
 
 #sources = ["Jetro", "Retro"]
 sources = ["Daily-mail", "Independent", "Cnn", "Bbc-news", "Reuters", "Al-jazeera-english", "The-telegraph", "Breitbart-news", "NYT", "Guardian"]
-#sources already done: "Usa-today", "Metro"
+#sources already done: "Usa-today", "Metro",
 
 source_words = []
 #article_stats = []
@@ -50,7 +51,6 @@ outputs_file = join(outputs_folder, "outputs.txt")
 
 
 def collate_words():
-    global full_output
     stop_words = set(stopwords.words('english'))
     for source_name in sources:
         source_folder = join ("C:\\Users\yaron.hollander", "Documents", "fakenews", str(source_name).capitalize())
@@ -80,7 +80,7 @@ def collate_words():
                 else:
                     [x for x in source_words if x['source']==source_name and x['word'] == w][0]['freq'] += 1
 
-            output = open (outputs_file, 'w+')
+            output = open (outputs_file, 'a+')
             output.write("source, word, freq\n")
             for x in source_words:
                 output.write(str(x['source']) + ", " + str(x['word']) + ", " + str(x['freq']) + "\n")
@@ -129,5 +129,14 @@ def collate_words():
     #     full_output += " 80 perc " + str("{:.3f}".format(a['subjectivity80'])) + "\n"
 
 
-collate_words()
+def heatmap():
+    input_folder = join("C:\\Users\yaron.hollander", "Documents", "fakenews")
+    source_words_file = join (outputs_folder, "outputs.txt")
+    source_words_long = pd.read_csv (source_words_file, header=0)
+    source_words_wide = source_words_long.pivot (index='word', columns='source', values='freq')
+    print (source_words_wide)
+    # normalise columns!
+    seaborn.heatmap (source_words_wide, annot=True)
 
+#collate_words()
+heatmap()
