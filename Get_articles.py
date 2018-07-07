@@ -37,55 +37,66 @@ def bit_of_cleaning (source):
 
 
 #sources = ["Jetro", "Retro"]
-sources = ["Daily-mail", "Independent", "Cnn", "Bbc-news", "Reuters", "Al-jazeera-english", "The-telegraph", "Breitbart-news", "NYT", "Guardian"]
-#sources already done: "Usa-today", "Metro",
+sources = ["Bbc-news", "Reuters", "Al-jazeera-english", "The-telegraph", "Breitbart-news", "NYT", "Guardian", "Usa-today", "Metro", "Daily-mail",
+           "Independent", "Cnn"]
 
 source_words = []
 #article_stats = []
 #article_words = [] # I've created this list but not used it yet! **********
 #source_words_wide = []
 outputs_folder = join("C:\\Users\yaron.hollander", "Documents", "fakenews")
-outputs_file = join(outputs_folder, "outputs.txt")
 #full_output = ""
 # levels of analysis: word > sentence > article > source
 
 
 def collate_words():
+    words_output_file = join(outputs_folder, "words_output.csv")
+    articles_completed_file = join(outputs_folder, "completed.csv")
     stop_words = set(stopwords.words('english'))
+    percentage_completed_per_source = 0
+    completed_articles_input = open(articles_completed_file, 'r')
+    articles_to_skip = pd.read_csv(completed_articles_input, header=None, engine='python')
+    completed_articles_input.close()
+    articles_to_skip.columns = ['source', 'file']
     for source_name in sources:
         source_folder = join ("C:\\Users\yaron.hollander", "Documents", "fakenews", str(source_name).capitalize())
         chdir(source_folder)
         article_files = [f for f in os.listdir('.') if f.endswith(".txt")]
         articles_per_source = len(article_files)
         articles_completed_per_source = 0
+        articles_to_skip_per_source = [a for a in articles_to_skip if a['source']==source_name]
         for f in article_files:
-            article_text = open (f, 'r').read()
-            words_filthy = TextBlob(article_text).words
-            words_dirty = [w.lower() for w in words_filthy if len(w)>1 and not "," in w]
-            words_messy = [w for w in words_dirty if not w in stop_words and not w in ["also", "got", "get"]]
-            words_clean = [Word(w).lemmatize() for w in words_messy]
-            #store_text = regex.sub ('[\t\n\r\f\v]', ' ', str(article_text))
-            #article_stats.append({'source': source_name, 'file': f, 'tot_len': len(words_filthy), 'text': store_text})
-            for w in words_clean:
-                #word_exists_by_source = len ([x for x in article_words if x['source'] == source_name and x['file'] == f
-                #                    and x['word'] == w])
-                word_exists_anywhere = len ([x for x in source_words if x['source'] == source_name and x['word'] == w])
-                #if word_exists_by_source == 0:
-                #    article_words.append({'source': source_name, 'file': f, 'word': w, 'count': 1})
-                #else:
-                #    [x for x in article_words if x['source']==source_name and x['file'] == f
-                #     and x['word'] == w][0]['count'] += 1
-                if word_exists_anywhere == 0:
-                    source_words.append({'source': source_name, 'word': w, 'freq': 1})
-                else:
-                    [x for x in source_words if x['source']==source_name and x['word'] == w][0]['freq'] += 1
-
-            output = open (outputs_file, 'a+')
-            output.write("source, word, freq\n")
-            for x in source_words:
-                output.write(str(x['source']) + ", " + str(x['word']) + ", " + str(x['freq']) + "\n")
-            output.close()
-
+            if f not in articles_to_skip_per_source['file']:
+                article_text = open (f, 'r').read()
+                words_filthy = TextBlob(article_text).words
+                words_dirty = [w.lower().replace("'", "").replace(".", "").replace(",", "") for w in words_filthy]
+                words_messy = [w for w in words_dirty if not w in stop_words]
+                words_ok = [Word(w).lemmatize() for w in words_messy if len(w)>1]
+                words_clean = [w for w in words_ok if not w in [source_name, "bbc", "also", "got", "get", "nt", "ve", "year", "say", "one", "two",
+                                                                "first", "last", "would", "new", "day", "like", "back", "could", "make", "go"]]
+                #store_text = regex.sub ('[\t\n\r\f\v]', ' ', str(article_text))
+                #article_stats.append({'source': source_name, 'file': f, 'tot_len': len(words_filthy), 'text': store_text})
+                for w in words_clean:
+                    #word_exists_by_source = len ([x for x in article_words if x['source'] == source_name and x['file'] == f
+                    #                    and x['word'] == w])
+                    word_exists_anywhere = len ([x for x in source_words if x['source'] == source_name and x['word'] == w])
+                    #if word_exists_by_source == 0:
+                    #    article_words.append({'source': source_name, 'file': f, 'word': w, 'count': 1})
+                    #else:
+                    #    [x for x in article_words if x['source']==source_name and x['file'] == f
+                    #     and x['word'] == w][0]['count'] += 1
+                    if word_exists_anywhere == 0:
+                        source_words.append({'source': source_name, 'word': w, 'freq': 1})
+                    else:
+                        [x for x in source_words if x['source']==source_name and x['word'] == w][0]['freq'] += 1
+                words_output = open (words_output_file, 'w+') # re-writing the whole file after each article to make it usable even when it doesn't finish
+                words_output.write("source,word,freq\n")
+                for x in source_words:
+                    if x['freq'] > 4:
+                        words_output.write(str(x['source']) + "," + str(x['word']) + "," + str(x['freq']) + "\n")
+                words_output.close()
+            completed_articles_output = open(articles_completed_file, 'a+')
+            completed_articles_output.write(str(source_name) + "," + str(f) + "\n")
             #sentences = article_text.sentences
             #[x for x in article_stats if x['source'] == source_name and x['file'] == f][0]['sentences'] = len(sentences)
             #sentence_length = []
@@ -110,8 +121,10 @@ def collate_words():
             #[x for x in article_stats if x['source'] == source_name and x['file'] == f][0]['subjectivity20'] = subjectivity20
             #[x for x in article_stats if x['source'] == source_name and x['file'] == f][0]['subjectivity80'] = subjectivity80
             articles_completed_per_source += 1
+            percentage_displayed = percentage_completed_per_source
             percentage_completed_per_source = int(100*articles_completed_per_source/articles_per_source)
-            print (source_name + ": " + str(percentage_completed_per_source) + "% completed")
+            if percentage_completed_per_source != percentage_displayed:
+                print (source_name + ": " + str(percentage_completed_per_source) + "% completed")
         # total_words_per_source = sum ([w['freq'] for w in source_words if w['source'] == source_name])
         # for s in source_words:
         #     if s['source'] == source_name:
@@ -131,12 +144,18 @@ def collate_words():
 
 def heatmap():
     input_folder = join("C:\\Users\yaron.hollander", "Documents", "fakenews")
-    source_words_file = join (outputs_folder, "outputs.txt")
-    source_words_long = pd.read_csv (source_words_file, header=0)
-    source_words_wide = source_words_long.pivot (index='word', columns='source', values='freq')
-    print (source_words_wide)
+    source_words_file = join (outputs_folder, "outputs.csv")
+    source_words_long = pd.read_csv (source_words_file, header=0, engine='python')
+    source_words_wide = pd.pivot_table(source_words_long, index='word', columns='source', values='freq', fill_value=0)
+    source_words_wide ['sum'] = source_words_wide.sum (axis=1, numeric_only=True)
+    source_words_show = source_words_wide.sort_values (by='sum', ascending=False).head(25)
+    #print (source_words_show)
+    source_words_show = source_words_show.drop('sum', 1)
     # normalise columns!
-    seaborn.heatmap (source_words_wide, annot=True)
+    word_heatmap = seaborn.heatmap (source_words_show, annot=True)
+    figure_file = join(outputs_folder, "heatmap.png")
+    word_heatmap.figure.savefig (figure_file)
 
-#collate_words()
-heatmap()
+
+collate_words()
+#heatmap()
