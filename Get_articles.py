@@ -50,23 +50,26 @@ outputs_folder = join("C:\\Users\yaron.hollander", "Documents", "fakenews")
 
 
 def collate_words():
-    words_output_file = join(outputs_folder, "words_output.csv")
-    articles_completed_file = join(outputs_folder, "completed.csv")
     stop_words = set(stopwords.words('english'))
-    percentage_completed_per_source = 0
+    words_output_file = join(outputs_folder, "words_output.csv")
+    words_output_from_previous_runs = open(words_output_file, 'r')
+    source_words = pd.read_csv(words_output_from_previous_runs, header=0, engine='python')
+    words_output_from_previous_runs.close()
+    articles_completed_file = join(outputs_folder, "completed.csv")
     completed_articles_input = open(articles_completed_file, 'r')
     articles_to_skip = pd.read_csv(completed_articles_input, header=None, engine='python')
     completed_articles_input.close()
     articles_to_skip.columns = ['source', 'file']
+    percentage_completed_per_source = 0
     for source_name in sources:
         source_folder = join ("C:\\Users\yaron.hollander", "Documents", "fakenews", str(source_name).capitalize())
         chdir(source_folder)
         article_files = [f for f in os.listdir('.') if f.endswith(".txt")]
         articles_per_source = len(article_files)
         articles_completed_per_source = 0
-        articles_to_skip_per_source = [a for a in articles_to_skip if a['source']==source_name]
+        articles_to_skip_per_source = [a for a in articles_to_skip.iterrows() if a['source']==source_name]
         for f in article_files:
-            if f not in articles_to_skip_per_source['file']:
+            if f not in articles_to_skip_per_source[:, "file"]:
                 article_text = open (f, 'r').read()
                 words_filthy = TextBlob(article_text).words
                 words_dirty = [w.lower().replace("'", "").replace(".", "").replace(",", "") for w in words_filthy]

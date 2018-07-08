@@ -1,11 +1,3 @@
-# 1) compare most common words across sources, e.g. check what words are typical of the source!!!
-# 2) then take all article stats and turn them into source stats!!!
-# 3) add tf-idf!!!
-# 4) add bigrams and trigrams!!!
-# 5) add word length distribution as one of the stats!
-# 6) add all kinds of visualisations!
-
-
 # Guardian -
 # Got full articles from April and May 2018, organised in multiple pages.
 # Note that there's a different restructuring function.
