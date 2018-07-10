@@ -67,9 +67,11 @@ def collate_words():
         article_files = [f for f in os.listdir('.') if f.endswith(".txt")]
         articles_per_source = len(article_files)
         articles_completed_per_source = 0
-        articles_to_skip_per_source = [a for a in articles_to_skip.iterrows() if a['source']==source_name]
+        articles_to_skip_per_source = articles_to_skip.loc [articles_to_skip['source'] == source_name]
+        files_to_skip_per_source = articles_to_skip_per_source.loc[:, 'file'].tolist()
         for f in article_files:
-            if f not in articles_to_skip_per_source[:, "file"]:
+            if f not in files_to_skip_per_source:
+                #print ("File", str(f), "from", source_name, "is not in the list of files to skip.")
                 article_text = open (f, 'r').read()
                 words_filthy = TextBlob(article_text).words
                 words_dirty = [w.lower().replace("'", "").replace(".", "").replace(",", "") for w in words_filthy]
@@ -82,24 +84,25 @@ def collate_words():
                 for w in words_clean:
                     #word_exists_by_source = len ([x for x in article_words if x['source'] == source_name and x['file'] == f
                     #                    and x['word'] == w])
-                    word_exists_anywhere = len ([x for x in source_words if x['source'] == source_name and x['word'] == w])
+                    relevant_words = source_words[(source_words['source']==source_name) & (source_words['word']==w)]
+                    word_exists_anywhere = len (relevant_words)
                     #if word_exists_by_source == 0:
                     #    article_words.append({'source': source_name, 'file': f, 'word': w, 'count': 1})
                     #else:
                     #    [x for x in article_words if x['source']==source_name and x['file'] == f
                     #     and x['word'] == w][0]['count'] += 1
                     if word_exists_anywhere == 0:
-                        source_words.append({'source': source_name, 'word': w, 'freq': 1})
+                        source_words.append({'source': source_name, 'word': w, 'freq': 1}, ignore_index=True)
                     else:
-                        [x for x in source_words if x['source']==source_name and x['word'] == w][0]['freq'] += 1
-                words_output = open (words_output_file, 'w+') # re-writing the whole file after each article to make it usable even when it doesn't finish
+                        source_words['freq'][(source_words['source']==source_name)&(source_words['word']==w)].iloc[0] += 1
+                words_output = open (words_output_file, 'w+') # re-writing the whole file after each article
                 words_output.write("source,word,freq\n")
-                for x in source_words:
-                    if x['freq'] > 4:
-                        words_output.write(str(x['source']) + "," + str(x['word']) + "," + str(x['freq']) + "\n")
+                for index, row in source_words.iterrows():
+                    if row['freq'] > 4:
+                        words_output.write(str(row['source']) + "," + str(row['word']) + "," + str(row['freq']) + "\n")
                 words_output.close()
-            completed_articles_output = open(articles_completed_file, 'a+')
-            completed_articles_output.write(str(source_name) + "," + str(f) + "\n")
+                completed_articles_output = open(articles_completed_file, 'a+')
+                completed_articles_output.write(str(source_name) + "," + str(f) + "\n")
             #sentences = article_text.sentences
             #[x for x in article_stats if x['source'] == source_name and x['file'] == f][0]['sentences'] = len(sentences)
             #sentence_length = []
