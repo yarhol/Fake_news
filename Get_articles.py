@@ -1,6 +1,7 @@
 # import Guardian_fetch
-# import NYT_fetch
+import NYT_fetch
 # import News_API_fetch
+import Process_articles
 # from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 import pandas as pd
@@ -12,33 +13,24 @@ from textblob import TextBlob, Word
 import seaborn
 
 
-def bit_of_cleaning (source):
-    source_folder = join ("C:\\Users\yaron.hollander", "Documents", "fakenews", str(source).capitalize())
-    chdir(source_folder)
-    files_to_check = [f for f in os.listdir('.')]
-    for f in files_to_check:
-        the_size = os.stat(f).st_size
-        if (the_size < 1000):
-            os.remove(f)
-            print ("The size of ", f, "was", the_size, ", so I got rid of the bastard.")
-        else:
-            print("The size of ", f, "was", the_size, ". I like them biiig.")
-    # The bit below is for a problem I had with "the telegraph" only.
-    # files_to_check = [f for f in os.listdir('.') if f.endswith(".txt")]
-    # for f in files_to_check:
-    #     with open(f, 'r') as the_file:
-    #         the_text = the_file.read().rstrip()
-    #         if (the_text.endswith("...")):
-    #             print("File ", f, "was incomplete, so I will get rid of the bastard.")
-    #             the_file.close()
-    #             os.remove(f)
-    #         else:
-    #             print("File ", f, "is cool.")
-
-
 #sources = ["Jetro", "Retro"]
 sources = ["Bbc-news", "Reuters", "Al-jazeera-english", "The-telegraph", "Breitbart-news", "NYT", "Guardian", "Usa-today", "Metro", "Daily-mail",
            "Independent", "Cnn"]
+
+# Guardian_fetch.guardian_fetch()
+# Guardian_fetch.guardian_save_articles()
+Process_articles.bit_of_cleaning("guardian")
+
+# NYT_fetch.fetch_list()
+NYT_fetch.scrape_individual_articles()
+# Process_articles.bit_of_cleaning("NYT")
+
+# source_name = "metro"
+# News_API_fetch.fetch_list(source_name)
+# source_links = News_API_fetch.list_links(source_name)
+# News_API_fetch.scrape_individual_articles(source_name, source_links)
+# Process_articles.bit_of_cleaning(source_name)
+
 
 source_words = []
 #article_stats = []
@@ -71,35 +63,36 @@ def collate_words():
         files_to_skip_per_source = articles_to_skip_per_source.loc[:, 'file'].tolist()
         for f in article_files:
             if f not in files_to_skip_per_source:
-                #print ("File", str(f), "from", source_name, "is not in the list of files to skip.")
                 article_text = open (f, 'r').read()
                 words_filthy = TextBlob(article_text).words
                 words_dirty = [w.lower().replace("'", "").replace(".", "").replace(",", "") for w in words_filthy]
                 words_messy = [w for w in words_dirty if not w in stop_words]
                 words_ok = [Word(w).lemmatize() for w in words_messy if len(w)>1]
-                words_clean = [w for w in words_ok if not w in [source_name, "bbc", "also", "got", "get", "nt", "ve", "year", "say", "one", "two",
-                                                                "first", "last", "would", "new", "day", "like", "back", "could", "make", "go"]]
+                words_clean = [w for w in words_ok if not w in [source_name, "bbc", "also", "got", "get", "nt", "ve", "year", "say", "said",
+                                                                "first", "last", "one", "two", "would", "new", "day", "like", "back", "could",
+                                                                "make", "go", "going"]]
                 #store_text = regex.sub ('[\t\n\r\f\v]', ' ', str(article_text))
                 #article_stats.append({'source': source_name, 'file': f, 'tot_len': len(words_filthy), 'text': store_text})
                 for w in words_clean:
                     #word_exists_by_source = len ([x for x in article_words if x['source'] == source_name and x['file'] == f
                     #                    and x['word'] == w])
-                    relevant_words = source_words[(source_words['source']==source_name) & (source_words['word']==w)]
-                    word_exists_anywhere = len (relevant_words)
+                    previous_occurences = source_words.loc[(source_words['source']==source_name)&(source_words['word']==w),'freq'].tolist()
+                    word_exists_anywhere = len (previous_occurences)
                     #if word_exists_by_source == 0:
                     #    article_words.append({'source': source_name, 'file': f, 'word': w, 'count': 1})
                     #else:
                     #    [x for x in article_words if x['source']==source_name and x['file'] == f
                     #     and x['word'] == w][0]['count'] += 1
                     if word_exists_anywhere == 0:
-                        source_words.append({'source': source_name, 'word': w, 'freq': 1}, ignore_index=True)
+                        new_word = pd.DataFrame({'source': [source_name], 'word': [w], 'freq': [1]}, index=[len(source_words)+1])
+                        source_words = pd.concat([source_words, new_word])
                     else:
-                        source_words['freq'][(source_words['source']==source_name)&(source_words['word']==w)].iloc[0] += 1
+                        source_words.loc[(source_words['source']==source_name)&(source_words['word']==w), 'freq'] += 1
                 words_output = open (words_output_file, 'w+') # re-writing the whole file after each article
                 words_output.write("source,word,freq\n")
                 for index, row in source_words.iterrows():
                     if row['freq'] > 4:
-                        words_output.write(str(row['source']) + "," + str(row['word']) + "," + str(row['freq']) + "\n")
+                        words_output.write(str(row['source']) + "," + str(row['word']) + "," + str(int(row['freq'])) + "\n")
                 words_output.close()
                 completed_articles_output = open(articles_completed_file, 'a+')
                 completed_articles_output.write(str(source_name) + "," + str(f) + "\n")
@@ -163,5 +156,5 @@ def heatmap():
     word_heatmap.figure.savefig (figure_file)
 
 
-collate_words()
+#collate_words()
 #heatmap()
