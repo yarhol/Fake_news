@@ -50,7 +50,7 @@ def scrape_individual_articles():
     for doc in obj_month2 ['response']['docs']:
         NYT_links.append(doc['web_url'])
     print (str(len(NYT_links)) + " new NYT articles.")
-    for x in range(0, 5000):
+    for x in range(6000, 8428):
         time.sleep(5)
         try:
             get_one_article = requests.get(NYT_links[x])

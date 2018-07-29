@@ -15,14 +15,15 @@ def bit_of_cleaning (source):
         else:
             print("The size of ", f, "was", the_size, ". I like them biiig.")
     # The bit below is for a problem I had with "the telegraph" only.
-    # files_to_check = [f for f in os.listdir('.') if f.endswith(".txt")]
-    # for f in files_to_check:
-    #     with open(f, 'r') as the_file:
-    #         the_text = the_file.read().rstrip()
-    #         if (the_text.endswith("...")):
-    #             print("File ", f, "was incomplete, so I will get rid of the bastard.")
-    #             the_file.close()
-    #             os.remove(f)
-    #         else:
-    #             print("File ", f, "is cool.")
+    if source=="the-telegraph":
+        files_to_check = [f for f in os.listdir('.') if f.endswith(".txt")]
+        for f in files_to_check:
+            with open(f, 'r') as the_file:
+                the_text = the_file.read().rstrip()
+                if (the_text.endswith("...")):
+                    print("File ", f, "was incomplete, so I will get rid of the bastard.")
+                    the_file.close()
+                    os.remove(f)
+                else:
+                    print("File ", f, "is cool.")
 
