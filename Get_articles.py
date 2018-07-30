@@ -1,6 +1,3 @@
-# import Guardian_fetch
-import NYT_fetch
-import News_API_fetch
 import Process_articles
 # from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
@@ -13,32 +10,12 @@ from textblob import TextBlob, Word
 import seaborn
 
 
+#Process_articles.fetch_articles()
 #sources = ["Jetro", "Retro"]
 sources = ["bbc-news", "reuters", "al-jazeera-english", "the-telegraph", "breitbart-news", "NYT", "guardian", "usa-today", "metro", "daily-mail",
            "independent", "cnn"]
-
-# Guardian_fetch.guardian_fetch()
-# Guardian_fetch.guardian_save_articles()
-# Process_articles.bit_of_cleaning("guardian")
-
-# NYT_fetch.fetch_list()
-# NYT_fetch.scrape_individual_articles()
-# Process_articles.bit_of_cleaning("NYT")
-
-# source_name = "bbc-news"
-# source_name = "al-jazeera-english"
-# source_name = "the-telegraph"
-# source_name = "breitbart-news"
-# source_name = "usa-today"
-# source_name = "metro"
-# source_name = "daily-mail"
-# source_name = "independent"
-# source_name = "cnn"
-# source_name = "reuters"
-# News_API_fetch.fetch_list(source_name)
-# source_links = News_API_fetch.list_links(source_name)
-# News_API_fetch.scrape_individual_articles(source_name, source_links)
-# Process_articles.bit_of_cleaning(source_name)
+#Process_articles.upload_to_s3(sources)
+#Process_articles.stats_of_s3_files(sources)
 
 
 source_words = []

@@ -9,8 +9,8 @@
 # Got data from: usa-today, metro, the-telegraph, daily-mail, independent, cnn, bbc-news, reuters, al-jazeera-english,
 # breitbart-news.
 # I got up to 100 articles per day since this is the limit.
-# First batch: 1 month ending around June 14-20 depending on the source.
-# Second batch: xxx
+# First batch: 1 month ending around June 14-20 2018 depending on the source.
+# Second batch: another 4 weeks from late June to late July 2018.
 # I scraped full articles, based on the different DOM of each source.
 #
 # FT -
