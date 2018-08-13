@@ -8,6 +8,12 @@ from os import makedirs, chdir
 from os.path import join
 from textblob import TextBlob, Word
 import seaborn
+import boto3
+from pyspark import SparkContext
+from pyspark.sql.session import SparkSession
+# from pyspark.sql import SQLContext ???
+from pyspark.ml.feature import StopWordsRemover, NGram, IDF, Tokenizer, HashingTF
+
 
 
 #Process_articles.fetch_articles()
@@ -25,6 +31,68 @@ source_words = []
 outputs_folder = join("C:\\Users\yaron.hollander", "Documents", "fakenews")
 #full_output = ""
 # levels of analysis: word > sentence > article > source
+
+
+class build_my_dataset:
+
+    def process_one_file (self, one_file):
+        s3 = boto3.resource('s3')
+        my_file = s3.Object ('mylittleproject', one_file)
+        full_text = my_file.get()['Body'].read().decode('utf-8')
+        return len(full_text)
+
+    def process_all_files (self):
+        s3 = boto3.resource('s3')
+        article_list = [file.key for file in s3.Bucket('mylittleproject').objects.all()]
+        sc = SparkContext(appName="LittleProject")
+        data = sc.parallelize(article_list)
+        here_is_what_i_read = data.map (lambda one_file: self.process_one_file(one_file)).collect()
+        # What I really want a table with: article, word, count, saved to s3!!!!
+        output_to_file = " ".join(str(x) for x in here_is_what_i_read)
+        s3.put_object (Body=output_to_file, Bucket='mylittleproject', Key='output.txt', ContentType='text/html')
+        return here_is_what_i_read
+
+
+# def build_my_dataset():
+#     # 1) From files to token list, 2) from token list to all the rest?
+#     # the lines below are a spark sql thing - it conflicts with the "parallelise" which is an RDD thing ??!!
+#     sc = SparkSession() # this replaces sql context!
+#
+#     sentenceData = sc.createDataFrame([
+#         ("Hi I heard about Spark"),
+#         ("I wish Java could use case classes"),
+#         ("Logistic regression models are neat")
+#     ], ["sentence"])
+#
+#     tokenizer = Tokenizer(inputCol="sentence", outputCol="words")
+#     wordsData = tokenizer.transform(sentenceData)
+#     # note that the tokenizer works on the varaibles in the sql context, not the general spark context!!!
+#
+#     hashingTF = HashingTF(inputCol="words", outputCol="rawFeatures", numFeatures=20)
+#     featurizedData = hashingTF.transform(wordsData)
+#     # alternatively, CountVectorizer can also be used to get term frequency vectors
+#
+#     idf = IDF(inputCol="rawFeatures", outputCol="features")
+#     idfModel = idf.fit(featurizedData)
+#     rescaledData = idfModel.transform(featurizedData)
+#
+#     rescaledData.select("label", "features").show()
+#
+#     #
+#
+#     sentenceData = sc.createDataFrame([(0, ["I", "saw", "the", "red", "balloon"]), (1, ["Mary", "had", "a", "little", "lamb"])], ["id", "words"])
+
+    # remover = StopWordsRemover(inputCol="words", outputCol="filtered")
+    # remover.transform(sentenceData).show(truncate=False)
+
+    # ngram = NGram(n=2, inputCol="words", outputCol="ngrams")
+    # ngramDataFrame = ngram.transform(sentenceData)
+    # ngramDataFrame.select("ngrams").show(truncate=False)
+
+#     sc.stop()
+
+
+x = build_my_dataset.process_all_files
 
 
 def collate_words():
